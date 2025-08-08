@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL Generator — Custom Scenarios</title>
+<style>
+  :root{--bg:#fff;--fg:#111;--muted:#6b7280;--primary:#0b5cff;--br:12px;--bd:1px solid rgba(0,0,0,.12)}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,Segoe UI,Roboto,Inter,Arial}
+  .container{max-width:1200px;margin:0 auto;padding:16px}
+  h1{font-size:22px;margin:8px 0 12px} h3{margin:12px 0}
+  .muted{color:var(--muted)}
+  .grid{display:grid;grid-template-columns:320px 1fr;gap:16px}
+  .card{background:#fff;border:var(--bd);border-radius:var(--br);padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .btn{padding:.5rem .75rem;border-radius:8px;border:var(--bd);background:#f7f7f9;cursor:pointer}
+  .btn.small{padding:.35rem .6rem;font-size:.9rem} .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .btn.danger{border-color:#e23b3b;color:#e23b3b}
+  .input,.textarea,select{width:100%;border:var(--bd);border-radius:8px;padding:.5rem .6rem;background:#fff}
+  .label{display:block;margin-bottom:.25rem;font-weight:600}
+  .list{list-style:none;margin:0;padding:0;border:var(--bd);border-radius:8px;overflow:auto;max-height:65vh}
+  .list li{padding:.5rem .6rem;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer}
+  .list li:last-child{border-bottom:none} .list li.active{background:rgba(11,92,255,.08)}
+  .row{display:grid;grid-template-columns:1fr 1fr 140px 120px 80px;gap:.5rem;align-items:end}
+  details{border:var(--bd);border-radius:8px;padding:.5rem .6rem}
+  summary{cursor:pointer;font-weight:700}
+  textarea{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+
+/* === Theming (light/dark) === */
+:root{
+  --bg:#ffffff; --fg:#101418; --muted:#6b7280; --card:#ffffff; --border:rgba(0,0,0,.12);
+  --primary:#0b5cff; --primary-contrast:#ffffff; --accent:#0ea5e9;
+  --label:#111827; --header:#0b5cff;
+}
+:root.dark{
+  --bg:#0c1116; --fg:#e5e7eb; --muted:#9aa4b2; --card:#0f1720; --border:rgba(255,255,255,.15);
+  --primary:#3b82f6; --primary-contrast:#0b1220; --accent:#38bdf8;
+  --label:#38bdf8; /* bright blue labels in dark mode */
+  --header:#38bdf8;
+}
+body{background:var(--bg); color:var(--fg)}
+.card{background:var(--card); border-color:var(--border)}
+.btn{background:transparent}
+.btn.primary{background:var(--primary); color:var(--primary-contrast); border-color:var(--primary)}
+.label{color:var(--label)}
+h1{color:var(--header)}
+/* Subtle focus states */
+.input:focus, .textarea:focus, select:focus, .btn:focus{outline:2px solid var(--accent); outline-offset:2px}
+/* Header bar */
+.topbar{display:flex;align-items:center;gap:.75rem;justify-content:space-between;margin-bottom:8px}
+.topbar .right{display:flex;align-items:center;gap:.5rem}
+.toggle{border:var(--bd);border-radius:999px;padding:.25rem .5rem;cursor:pointer}
+
+/* === Imported button/icon styles from main tool === */
+.btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 8px;}
+.btn.generate {
+      background: #4CAF50;
+      color: white;}
+.btn.copy {
+      background: #2196F3;
+      color: white;}
+.btn.reset {
+      background: #FF9800;
+      color: white;}
+.btn.export {
+      background: #9C27B0;
+      color: white;}
+.copy-success {
+      display: none;
+      margin-top: 8px;
+      color: #16a34a;
+      font-weight: bold;}
+/* ✨ Gradient Buttons */
+.btn.generate {
+  background: linear-gradient(135deg, #42e695, #3bb2b8);
+  color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
+.btn.generate:hover {
+  background: linear-gradient(135deg, #34d58c, #309aa8);}
+.btn.copy {
+  background: linear-gradient(135deg, #36d1dc, #5b86e5);
+  color: white;}
+.btn.copy:hover {
+  background: linear-gradient(135deg, #2bbec7, #4f75cd);}
+.btn.reset {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  color: black;}
+.btn.reset:hover {
+  background: linear-gradient(135deg, #f5a623, #ffda44);}
+.btn.export {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  color: white;}
+.btn.export:hover {
+  background: linear-gradient(135deg, #a970d6, #7e35a2);}
+
+/* Delete icon styling */
+.delete-btn{
+  background:none;
+  border:none;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:0.9em;
+  padding:0 4px;
+}
+.delete-btn:hover{
+  color:red;
+}
+
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar"><h1>✨ SQL Generator — Custom Scenarios</h1><div class="right"><a href="RESTORE_clean_fixed_no_tabs.html" class="btn small">↩️ Back to main</a><button id="themeToggle" class="btn small">🌗 Toggle</button></div></div>
+    <p class="muted">This page is standalone and uses your browser storage. Build scenarios with inputs and SQL templates, then generate filled queries. Use Export/Import to share with your team.</p>
+
+    <div class="grid">
+      <!-- Sidebar -->
+      <div class="card">
+        <div style="display:flex;gap:.5rem;margin-bottom:.5rem">
+          <button id="btnNewScenario" class="btn small">＋ New</button>
+          <button id="btnExportScenarios" class="btn small">⬇️ Export</button>
+          <label class="btn small" for="importFile" style="cursor:pointer">⬆️ Import</label>
+          <input id="importFile" type="file" accept="application/json" style="display:none">
+        </div>
+        <input id="customSearch" class="input" placeholder="Search scenarios…" style="margin-bottom:.5rem">
+        <ul id="customList" class="list"></ul>
+      </div>
+
+      <!-- Editor + Runner -->
+      <div class="card">
+        <form id="editorForm" onsubmit="event.preventDefault(); saveEditor();">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+            <div><label class="label">Title</label><input id="e_title" class="input" required placeholder="My Scenario"></div>
+            <div><label class="label">Tags (comma-separated)</label><input id="e_tags" class="input" placeholder="AP, GL, AR"></div>
+          </div>
+          <div style="margin-top:.5rem">
+            <label class="label">Description</label>
+            <textarea id="e_description" class="textarea" rows="2" placeholder="What this scenario does"></textarea>
+          </div>
+
+          <details style="margin-top:.75rem" open>
+            <summary>Inputs</summary>
+            <div id="inputsWrap" style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem"></div>
+            <button type="button" class="btn small" onclick="addInputRow()">＋ Add input</button>
+          </details>
+
+          <details style="margin-top:.75rem" open>
+            <summary>Queries</summary>
+            <div id="queriesWrap" style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem"></div>
+            <button type="button" class="btn small" onclick="addQueryRow()">＋ Add query</button>
+          </details>
+
+          <div style="display:flex;gap:.5rem;margin-top:1rem">
+            <button class="btn primary" type="submit">💾 Save</button>
+            <button class="btn" type="button" onclick="duplicateCurrent()">🧬 Duplicate</button>
+            <button class="btn danger" type="button" onclick="deleteCurrent()">🗑 Delete</button>
+          </div>
+        </form>
+
+        <hr style="margin:1rem 0">
+        <div id="runner">
+          <h3>Run Scenario</h3>
+          <div id="runnerInputs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.5rem"></div>
+          <button class="btn primary" type="button" onclick="runCustomScenario()">⚙️ Generate SQL</button>
+          <div style="margin-top:.75rem">
+            <label class="label">Output</label>
+            <textarea id="runnerOutput" class="textarea" rows="12"></textarea>
+            <div style="display:flex;gap:.5rem;margin-top:.5rem">
+              <button class="btn" type="button" onclick="copyFrom('runnerOutput')">📋 Copy</button>
+              <button class="btn" type="button" onclick="exportText('runnerOutput','custom_scenario.sql')">💾 Export .sql</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ===== Storage & State =====
+const LS_KEY = 'customScenarios_v1';
+let customState = { items: [], currentId: null };
+
+function uuid(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random()*16|0, v = c === 'x'? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
+}
+function loadCustomScenarios(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)? parsed : (parsed.items||[]);
+  }catch(e){ return []; }
+}
+function saveCustomScenarios(items){
+  localStorage.setItem(LS_KEY, JSON.stringify(items));
+}
+
+// ===== Utilities =====
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function copyFrom(id){
+  const el = document.getElementById(id); if(!el) return;
+  el.select(); document.execCommand('copy');
+}
+function exportText(textareaId, filename){
+  const el = document.getElementById(textareaId); if(!el) return;
+  const blob = new Blob([el.value||''], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename||'output.sql';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ===== List =====
+function renderList(){
+  const list = document.getElementById('customList');
+  const q = (document.getElementById('customSearch')?.value||'').toLowerCase();
+  const items = customState.items.filter(it => !q || it.title.toLowerCase().includes(q) || (it.tags||[]).join(',').toLowerCase().includes(q));
+  list.innerHTML = items.map(it => `<li data-id="${it.id}" class="${it.id===customState.currentId?'active':''}">${escapeHtml(it.title)}</li>`).join('');
+  list.querySelectorAll('li').forEach(li => li.addEventListener('click', () => selectItem(li.getAttribute('data-id'))));
+}
+function selectItem(id){
+  customState.currentId = id; renderList();
+  const sc = customState.items.find(i => i.id===id);
+  loadEditor(sc); renderRunner(sc);
+}
+
+// ===== Editor =====
+function loadEditor(sc){
+  document.getElementById('e_title').value = sc?.title || '';
+  document.getElementById('e_description').value = sc?.description || '';
+  document.getElementById('e_tags').value = (sc?.tags||[]).join(', ');
+  const iw = document.getElementById('inputsWrap'); iw.innerHTML='';
+  (sc?.inputs||[]).forEach(addInputRow);
+  const qw = document.getElementById('queriesWrap'); qw.innerHTML='';
+  (sc?.queries||[]).forEach(addQueryRow);
+}
+function addInputRow(item){
+  const wrap = document.getElementById('inputsWrap');
+  const data = item || {name:'',label:'',type:'text',required:false,multi:false};
+  const row = document.createElement('div'); row.className='row input-row';
+  row.innerHTML = `
+    <div><label class="label">Name</label><input class="input" data-k="name" value="${escapeHtml(data.name)}" placeholder="USERKEY"></div>
+    <div><label class="label">Label</label><input class="input" data-k="label" value="${escapeHtml(data.label)}" placeholder="USERKEY"></div>
+    <div><label class="label">Type</label>
+      <select class="input" data-k="type">
+        <option value="text"${data.type==='text'?' selected':''}>text</option>
+        <option value="date"${data.type==='date'?' selected':''}>date</option>
+        <option value="number"${data.type==='number'?' selected':''}>number</option>
+        <option value="select"${data.type==='select'?' selected':''}>select</option>
+        <option value="textarea"${data.type==='textarea'?' selected':''}>textarea</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <label><input type="checkbox" data-k="required"${data.required?' checked':''}> required</label>
+      <label><input type="checkbox" data-k="multi"${data.multi?' checked':''}> multi</label>
+    </div>
+    <button type="button" class="btn small" onclick="this.closest('.input-row').remove()">Remove</button>`;
+  wrap.appendChild(row);
+}
+function addQueryRow(item){
+  const wrap = document.getElementById('queriesWrap');
+  const data = item || {comment:'--Query', sql:''};
+  const row = document.createElement('div'); row.className='query-row';
+  row.innerHTML = `
+    <div>
+      <label class="label">Comment</label>
+      <input class="input" data-k="comment" value="${escapeHtml(data.comment)}" placeholder="--Query something">
+      <label class="label" style="margin-top:.25rem">SQL (use {{INPUT}} or {{INPUT_csv}})</label>
+      <textarea class="textarea" rows="4" data-k="sql" placeholder="SELECT * FROM TABLE WHERE ID IN ({{ID_csv}})">${escapeHtml(data.sql)}</textarea>
+      <div style="display:flex;gap:.5rem;margin-top:.25rem">
+        <button type="button" class="btn small" onclick="moveRow(this,-1)">↑</button>
+        <button type="button" class="btn small" onclick="moveRow(this,1)">↓</button>
+        <button type="button" class="btn small" onclick="this.closest('.query-row').remove()">Remove</button>
+      </div>
+    </div>`;
+  wrap.appendChild(row);
+}
+function moveRow(btn, dir){
+  const row = btn.closest('.query-row'); const wrap = row.parentElement;
+  const sib = dir<0 ? row.previousElementSibling : row.nextElementSibling;
+  if(sib){ wrap.insertBefore(row, dir<0 ? sib : sib.nextSibling); }
+}
+function saveEditor(){
+  const sc = customState.items.find(i => i.id===customState.currentId) || {id: uuid(), createdAt: Date.now()};
+  sc.title = document.getElementById('e_title').value.trim();
+  sc.description = document.getElementById('e_description').value.trim();
+  sc.tags = document.getElementById('e_tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  sc.inputs = Array.from(document.querySelectorAll('#inputsWrap .input-row')).map(r => {
+    const val = k => r.querySelector(`[data-k="${k}"]`);
+    return {
+      name: (val('name')?.value||'').trim(),
+      label: (val('label')?.value||'').trim(),
+      type: (val('type')?.value||'text').trim(),
+      required: r.querySelector('[data-k="required"]')?.checked || false,
+      multi: r.querySelector('[data-k="multi"]')?.checked || false
+    };
+  }).filter(i=>i.name);
+  sc.queries = Array.from(document.querySelectorAll('#queriesWrap .query-row')).map(r => ({
+    comment: r.querySelector('[data-k="comment"]')?.value||'--Query',
+    sql: r.querySelector('[data-k="sql"]')?.value||''
+  })).filter(q=>q.sql.trim());
+  sc.updatedAt = Date.now();
+  const idx = customState.items.findIndex(i => i.id===sc.id);
+  if(idx>=0){ customState.items[idx]=sc; } else { customState.items.unshift(sc); }
+  saveCustomScenarios(customState.items); customState.currentId = sc.id;
+  renderList(); alert('Saved ✔');
+}
+function newScenario(){
+  const sc = {
+    id: uuid(), title: 'New Scenario', description: '', tags: [],
+    inputs: [{name:'USERKEY', label:'USERKEY', type:'text', required:true, multi:true}],
+    queries: [{comment:'--Example: query by USERKEY', sql:'SELECT * FROM SOME_TABLE WHERE USERKEY IN ({{USERKEY_csv}})'}],
+    createdAt: Date.now(), updatedAt: Date.now()
+  };
+  customState.items.unshift(sc); saveCustomScenarios(customState.items);
+  customState.currentId = sc.id; renderList(); loadEditor(sc); renderRunner(sc);
+}
+function duplicateCurrent(){
+  const sc = customState.items.find(i => i.id===customState.currentId); if(!sc) return;
+  const copy = JSON.parse(JSON.stringify(sc)); copy.id = uuid(); copy.title = sc.title + ' (Copy)';
+  copy.createdAt = Date.now(); copy.updatedAt = Date.now();
+  customState.items.unshift(copy); saveCustomScenarios(customState.items);
+  customState.currentId = copy.id; renderList(); loadEditor(copy); renderRunner(copy);
+}
+function deleteCurrent(){
+  const sc = customState.items.find(i => i.id===customState.currentId); if(!sc) return;
+  if(!confirm('Delete this scenario?')) return;
+  customState.items = customState.items.filter(i => i.id!==sc.id);
+  saveCustomScenarios(customState.items); customState.currentId = customState.items[0]?.id || null;
+  renderList(); loadEditor(customState.items[0]); renderRunner(customState.items[0]);
+}
+
+// ===== Runner =====
+function normalizeList(v){ return String(v||'').split(',').map(s=>s.trim()).filter(Boolean); }
+function csvWrap(arr){ return arr.map(v => `'${String(v).replace(/'/g, "''")}'`).join(', '); }
+function fillTemplate(sql, values){
+  return sql.replace(/\{\{(\w+?)(_csv)?\}\}/g, (m, key, csv) => {
+    const raw = values[key];
+    if(csv){
+      const list = Array.isArray(raw)? raw : normalizeList(raw);
+      return list.length ? csvWrap(list) : '';
+    }
+    return raw==null ? '' : String(raw);
+  });
+}
+function collectRunnerInputs(sc){
+  const map = {};
+  (sc.inputs||[]).forEach(inp => {
+    const el = document.getElementById('r_'+inp.name);
+    let val = el ? el.value : '';
+    if(inp.type==='number'){ val = val? Number(val):''; }
+    map[inp.name] = val;
+  });
+  return map;
+}
+function renderRunner(sc){
+  const wrap = document.getElementById('runnerInputs'); if(!wrap) return;
+  if(!sc){ wrap.innerHTML = '<div class="muted">Select or create a scenario to run.</div>'; return; }
+  wrap.innerHTML = (sc.inputs||[]).map(inp => {
+    const id = 'r_'+inp.name; const placeholder = inp.multi ? 'Comma-separated' : '';
+    if(inp.type==='textarea'){
+      return `<div><label class="label">${escapeHtml(inp.label||inp.name)}${inp.required?' *':''}</label>
+              <textarea id="${id}" class="textarea" rows="3" placeholder="${placeholder}"></textarea></div>`;
+    } else if (inp.type==='select'){
+      return `<div><label class="label">${escapeHtml(inp.label||inp.name)}${inp.required?' *':''}</label>
+              <select id="${id}" class="input"><option value="">-- select --</option></select></div>`;
+    } else {
+      return `<div><label class="label">${escapeHtml(inp.label||inp.name)}${inp.required?' *':''}</label>
+              <input id="${id}" class="input" type="${inp.type==='date'?'date':(inp.type==='number'?'number':'text')}" placeholder="${placeholder}"></div>`;
+    }
+  }).join('');
+}
+function runCustomScenario(){
+  const sc = customState.items.find(i => i.id===customState.currentId); if(!sc) return;
+  const missing = (sc.inputs||[]).filter(i => i.required && !String((document.getElementById('r_'+i.name)?.value)||'').trim());
+  if(missing.length){ alert('Missing required: ' + missing.map(i=>i.label||i.name).join(', ')); return; }
+  const values = collectRunnerInputs(sc);
+  const outputs = [];
+  for(const q of (sc.queries||[])){
+    let out = fillTemplate(q.sql, values);
+    if(/\{\{\w+(_csv)?\}\}/.test(out)){ continue; }
+    outputs.push((q.comment||'--Query') + '\n' + out + '\n');
+  }
+  document.getElementById('runnerOutput').value = outputs.join('\n');
+}
+
+// ===== Import/Export =====
+function exportJSON(items){
+  const blob = new Blob([JSON.stringify(items, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'custom_scenarios.json';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function handleImport(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      const items = Array.isArray(data) ? data : (data.items||[]);
+      const map = new Map(customState.items.map(i=>[i.id,i]));
+      for(const it of items){ if(!map.has(it.id)) map.set(it.id, it); }
+      customState.items = Array.from(map.values());
+      saveCustomScenarios(customState.items);
+      renderList(); alert('Imported ✔');
+    }catch(e){ alert('Invalid JSON'); }
+  };
+  reader.readAsText(file);
+}
+
+// ===== Wire-up =====
+document.addEventListener('DOMContentLoaded', () => {
+  customState.items = loadCustomScenarios();
+  if(!Array.isArray(customState.items)) customState.items = [];
+  if(!customState.items.length){
+    // Seed an example for first-time users
+    const seed = {
+      id: uuid(),
+      title: 'Example: Invoices by USERKEY & Month',
+      description: 'Demo placeholders like {{USERKEY_csv}}.',
+      tags: ['demo','example'],
+      inputs: [
+        {name:'USERKEY', label:'USERKEY', type:'text', required:true, multi:true},
+        {name:'ACCTG_MTH', label:'Accounting Month (YYYY-MM-DD)', type:'date', required:false, multi:false}
+      ],
+      queries: [
+        {comment:'--Query invoices by USERKEY', sql:'SELECT * FROM INVOICE WHERE USERKEY IN ({{USERKEY_csv}})'},
+        {comment:'--Optional month filter', sql:"SELECT * FROM STRAN_CORE_INTFC WHERE ACCTG_MTH = '{{ACCTG_MTH}}'"}
+      ],
+      createdAt: Date.now(), updatedAt: Date.now()
+    };
+    customState.items = [seed];
+    saveCustomScenarios(customState.items);
+  }
+  customState.currentId = customState.items[0]?.id || null;
+
+  document.getElementById('btnNewScenario')?.addEventListener('click', newScenario);
+  document.getElementById('btnExportScenarios')?.addEventListener('click', () => exportJSON(customState.items));
+  document.getElementById('importFile')?.addEventListener('change', (e) => {
+    if(e.target.files && e.target.files[0]) handleImport(e.target.files[0]);
+    e.target.value = '';
+  });
+  document.getElementById('customSearch')?.addEventListener('input', renderList);
+
+  renderList(); loadEditor(customState.items[0]); renderRunner(customState.items[0]);
+});
+</script>
+
+<script>
+// === Theme bootstrap ===
+(function(){
+  try{
+    const saved = localStorage.getItem('sqlgen_theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved ? (saved === 'dark') : prefersDark;
+    document.documentElement.classList.toggle('dark', isDark);
+  }catch(e){}
+  const btn = document.getElementById('themeToggle');
+  if(btn){
+    btn.addEventListener('click', () => {
+      const nowDark = !document.documentElement.classList.contains('dark');
+      document.documentElement.classList.toggle('dark', nowDark);
+      try{ localStorage.setItem('sqlgen_theme', nowDark ? 'dark' : 'light'); }catch(e){}
+    });
+  }
+})();
+</script>
+
+<script>
+function deleteCustomScenario(id){
+  if(!confirm("Delete this scenario?")) return;
+  try{
+    let arr = JSON.parse(localStorage.getItem('customScenarios_v1')||'[]');
+    arr = arr.filter(s => s.id !== id);
+    localStorage.setItem('customScenarios_v1', JSON.stringify(arr));
+    renderCustomList();
+  }catch(e){
+    alert('Delete failed: ' + e.message);
+  }
+}
+</script>
+
+</body>
+</html>
